@@ -42,6 +42,9 @@ struct Process {
   int priority = 0;
   // список I/O-блокировок
   std::vector<IoBlock> ioBlocks;
+  
+  // запускался ли процесс хотя бы раз
+  bool started = false;
 
   // Метрики (заполняются симулятором)
   // момент первого запуска
