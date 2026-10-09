@@ -1,0 +1,5 @@
+# pid name arrival burst priority deadline io(at:dur,...)
+1 CPU1 0 20 2 0 -
+2 IO1 1 6 1 0 1:4,2:4,3:4,4:4,5:4
+3 IO2 2 6 1 0 1:4,2:4,3:4,4:4,5:4
+4 CPU2 3 12 3 0 -

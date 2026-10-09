@@ -78,7 +78,27 @@ std::vector<Process> makeHrrnTestSet() {
   add(4, "S2", 5, 1, 1);
   return procs;
 }
-
+std::vector<Process> makeConvoySet() {
+  std::vector<Process> procs;
+  auto add = [&](int pid, const std::string& name, std::uint64_t arrival,
+                 std::uint64_t burst, int priority,
+                 std::vector<IoBlock> io = {}) {
+    Process p;
+    p.pid = pid; p.name = name;
+    p.arrivalTime = arrival;
+    p.burstTime = burst;
+    p.remainingTime = burst;
+    p.priority = priority;
+    p.dynamicPriority = priority;
+    p.ioBlocks = std::move(io);
+    procs.push_back(p);
+  };
+  add(1, "CPU1", 0, 20, 2);
+  add(2, "IO1",  1,  6, 1, {{1, 4}, {2, 4}, {3, 4}, {4, 4}, {5, 4}});
+  add(3, "IO2",  2,  6, 1, {{1, 4}, {2, 4}, {3, 4}, {4, 4}, {5, 4}});
+  add(4, "CPU2", 3, 12, 3);
+  return procs;
+}
 void printResult(const SimResult& r) {
   std::cout << std::left << std::setw(30) << r.algorithm
             << " | wait=" << std::setw(7) << std::fixed << std::setprecision(2) << r.avgWaiting
@@ -238,6 +258,40 @@ int main() {
               << std::string(r.contextSwitches, '#') << "\n";
   }
 }
+// Задание 6: convoy effect — FCFS vs MLFQ
+{
+    auto set = makeConvoySet();
+    std::cout << "\nЗадание 6. Convoy effect (I/O + CPU)\n";
 
+    std::vector<std::unique_ptr<Scheduler>> scheds;
+    scheds.push_back(std::make_unique<FcfsScheduler>(set));
+    scheds.push_back(std::make_unique<SrtnScheduler>(set));
+    scheds.push_back(std::make_unique<RrScheduler>(set, 4));
+    scheds.push_back(std::make_unique<PriorityScheduler>(set, true, true));
+    scheds.push_back(std::make_unique<MlfqScheduler>(set));
+    for (auto& s : scheds) printResult(runSimulation(*s));
+}
+
+// Задание 6: таблицы по процессам для FCFS и MLFQ
+{
+    auto set = makeConvoySet();
+
+    FcfsScheduler fcfs(set);
+    SimResult r1 = runSimulation(fcfs);
+    std::cout << "\nFCFS, по процессам:\n";
+    printProcessTable(fcfs.processes());
+    std::cout << "FCFS Gantt:\n";
+    printGantt(r1);
+
+    MlfqScheduler mlfq(set);
+    SimResult r2 = runSimulation(mlfq);
+    std::cout << "\nMLFQ, по процессам:\n";
+    printProcessTable(mlfq.processes());
+    std::cout << "MLFQ Gantt:\n";
+    printGantt(r2);
+    {
+    saveSet("sets/set_convoy.txt", makeConvoySet());
+}
+}
   return 0;
 }
