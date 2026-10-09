@@ -4,6 +4,7 @@ add_executable(donstu_os_cpp_scheduler
     process.h
     scheduler.h
     simulator.h
+    multicore.cpp
     testsets.h
     fcfs.h
     sjf.h

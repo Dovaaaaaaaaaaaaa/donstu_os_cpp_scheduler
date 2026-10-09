@@ -378,5 +378,33 @@ runExperiment10(3, "CPU utilization %");
 
     std::cout << "\nCSV с Гантом сохранены в results/\n";
 }
+// Задание 7: многоядерный режим
+{
+    std::cout << "\nМногоядерный режим (набор makeTestSet)\n";
+    auto set = makeTestSet();
+    for (int cores : {1, 2, 4}) {
+        FcfsScheduler fcfs(set);
+        printResult(runSimulationMulti(fcfs, cores));
+
+        SjfScheduler sjf(set);
+        printResult(runSimulationMulti(sjf, cores));
+
+        SrtnScheduler srtn(set);
+        printResult(runSimulationMulti(srtn, cores));
+    }
+
+    // Гант по ядрам для SJF x2
+    std::cout << "\nSJF x2, диаграмма по ядрам:\n";
+    SjfScheduler sjf2(set);
+    SimResult r = runSimulationMulti(sjf2, 2);
+    for (int c = 0; c < 2; ++c) {
+        std::cout << "  Ядро " << c << ":\n";
+        for (auto& [pid, span] : r.coreGantt[c]) {
+            std::cout << "    [" << span.first << "-" << span.second << ") ";
+            if (pid == -1) std::cout << "IDLE\n";
+            else std::cout << "P" << pid << "\n";
+        }
+    }
+}
   return 0;
 }
