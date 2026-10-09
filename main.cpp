@@ -6,6 +6,7 @@
 #include "mlfq.h"
 #include "simulator.h"
 #include "testsets.h"
+#include "hrrn.h"
 
 #include <iostream>
 #include <iomanip>
@@ -55,6 +56,26 @@ std::vector<Process> makeIoTestSet() {
   add(2, "IO1",  1,  2, 1, {{1, 5}, {1, 5}, {0, 0}});
   add(3, "IO2",  2,  2, 1, {{1, 5}, {1, 5}, {0, 0}});
   add(4, "CPU2", 3, 10, 3);
+  return procs;
+}
+
+std::vector<Process> makeHrrnTestSet() {
+  std::vector<Process> procs;
+  auto add = [&](int pid, const std::string& name, std::uint64_t arrival,
+                 std::uint64_t burst, int priority) {
+    Process p;
+    p.pid = pid; p.name = name;
+    p.arrivalTime = arrival;
+    p.burstTime = burst;
+    p.remainingTime = burst;
+    p.priority = priority;
+    p.dynamicPriority = priority;
+    procs.push_back(p);
+  };
+  add(1, "A",  0, 4, 1);
+  add(2, "L",  1, 6, 1);
+  add(3, "S1", 4, 2, 1);
+  add(4, "S2", 5, 1, 1);
   return procs;
 }
 
@@ -109,19 +130,54 @@ int main() {
     for (auto& s : scheds) printResult(runSimulation(*s));
   }
 
-  std::cout << "\n";
+  // Задание 3: SJF vs HRRN на наборе A/L/S1/S2
+  {
+    auto set = makeHrrnTestSet();
+    std::cout << "\nСравнение SJF и HRRN:\n";
+    SjfScheduler  sjf(set);
+    HrrnScheduler hrrn(set);
+    SimResult r1 = runSimulation(sjf);
+    SimResult r2 = runSimulation(hrrn);
+    printResult(r1);
+    printResult(r2);
+    std::cout << "\nSJF Gantt:\n";  printGantt(r1);
+    std::cout << "\nHRRN Gantt:\n"; printGantt(r2);
+  }
+
+  // Диаграмма Ганта для RR (q=2)
   {
     auto set = makeTestSet();
     RrScheduler rr(set, 2);
     SimResult r = runSimulation(rr);
+    std::cout << "\n";
     printGantt(r);
   }
-{
+
+  // Задание 8: таблица по процессам
+  {
     auto set = makeTestSet();
     RrScheduler rr(set, 2);
     SimResult r = runSimulation(rr);
     std::cout << "\nПо процессам, RR (q=2):\n";
     printProcessTable(rr.processes());
-}
+  }
+
+  // Задание 13: сохранение/загрузка
+  {
+    auto set = makeTestSet();
+    saveSet("sets/set_basic.txt", set);
+
+    std::vector<Process> loaded;
+    if (!loadSet("sets/set_basic.txt", loaded)) {
+        std::cerr << "Не удалось загрузить sets/set_basic.txt\n";
+        return 1;
+    }
+
+    FcfsScheduler a(set), b(loaded);
+    std::cout << "\nПроверка сохранения/загрузки (FCFS):\n";
+    printResult(runSimulation(a));
+    printResult(runSimulation(b));
+  }
+
   return 0;
 }

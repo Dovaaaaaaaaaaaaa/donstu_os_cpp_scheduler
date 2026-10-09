@@ -7,6 +7,7 @@ add_executable(donstu_os_cpp_scheduler
     testsets.h
     fcfs.h
     sjf.h
+    hrrn.h
     srtn.h
     rr.h
     priority.h
