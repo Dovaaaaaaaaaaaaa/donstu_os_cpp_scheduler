@@ -8,6 +8,8 @@
 
 // Результаты прогона
 struct SimResult {
+std::uint64_t overheadTicks = 0;   // сколько тактов ушло на переключения
+double overheadPercent = 0;        // процент от общего времени
   std::string algorithm;
   double avgWaiting = 0;
   double avgTurnaround = 0;
@@ -20,4 +22,6 @@ struct SimResult {
 };
 
 // Прогон одного планировщика
-SimResult runSimulation(Scheduler& sched, std::uint64_t maxTicks = 100000);
+SimResult runSimulation(Scheduler& sched,
+                        std::uint64_t maxTicks = 100000,
+                        std::uint64_t switchCost = 0);

@@ -87,6 +87,8 @@ void printResult(const SimResult& r) {
             << " | CPU=" << std::setw(6) << r.cpuUtilization << "%"
             << " | CS=" << std::setw(4) << r.contextSwitches
             << " | done=" << r.throughput
+            << " | ovh=" << std::setw(6) << std::fixed << std::setprecision(2)
+            << r.overheadPercent << "%"
             << "\n";
 }
 
@@ -94,8 +96,9 @@ void printGantt(const SimResult& r) {
   std::cout << "Gantt (" << r.algorithm << "):\n";
   for (auto& [pid, span] : r.gantt) {
     std::cout << "  [" << span.first << "-" << span.second << ") ";
-    if (pid == -1) std::cout << "IDLE\n";
-    else std::cout << "P" << pid << "\n";
+if (pid == -1) std::cout << "IDLE\n";
+else if (pid == -2) std::cout << "CS\n";
+else std::cout << "P" << pid << "\n";
   }
   std::cout << "\n";
 }
@@ -200,6 +203,26 @@ int main() {
     printResult(runSimulation(a));
     printResult(runSimulation(b));
   }
-
+// Задание 4: накладные расходы на переключение
+{
+    auto set = makeTestSet();
+    std::cout << "\nВлияние switchCost на RR (набор makeTestSet)\n";
+    std::cout << "q  cost  wait   turn   resp   CPU%   ovh%   CS\n";
+    for (std::uint64_t q : {1, 2, 4, 8}) {
+        for (std::uint64_t cost : {0, 1}) {
+            RrScheduler rr(set, q);
+            SimResult r = runSimulation(rr, 100000, cost);
+            std::cout << std::setw(2) << q << "  "
+                      << std::setw(3) << cost << "  "
+                      << std::fixed << std::setprecision(2)
+                      << std::setw(6) << r.avgWaiting << " "
+                      << std::setw(6) << r.avgTurnaround << " "
+                      << std::setw(6) << r.avgResponse << " "
+                      << std::setw(6) << r.cpuUtilization << " "
+                      << std::setw(6) << r.overheadPercent << " "
+                      << std::setw(4) << r.contextSwitches << "\n";
+        }
+    }
+}
   return 0;
 }
