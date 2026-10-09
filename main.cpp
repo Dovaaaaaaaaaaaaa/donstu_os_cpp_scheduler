@@ -99,7 +99,27 @@ void printGantt(const SimResult& r) {
   }
   std::cout << "\n";
 }
-
+// Печатает Гант, используя имена процессов вместо "P" + pid.
+// switchCost нужен, чтобы понимать: pid == -2 это CS.
+void printGanttNamed(const SimResult& r, const std::vector<Process>& procs) {
+  std::cout << "Gantt (" << r.algorithm << "):\n";
+  for (auto& [pid, span] : r.gantt) {
+    std::cout << "  [" << span.first << "-" << span.second << ") ";
+    if (pid == -1) {
+      std::cout << "IDLE\n";
+    } else if (pid == -2) {
+      std::cout << "CS\n";
+    } else {
+      // ищем имя процесса
+      std::string name = "?";
+      for (const auto& p : procs) {
+        if (p.pid == pid) { name = p.name; break; }
+      }
+      std::cout << name << "\n";
+    }
+  }
+  std::cout << "\n";
+}
 int main() {
   std::cout << "Case 1: CPU-bound\n";
   {
@@ -140,8 +160,10 @@ int main() {
     SimResult r2 = runSimulation(hrrn);
     printResult(r1);
     printResult(r2);
-    std::cout << "\nSJF Gantt:\n";  printGantt(r1);
-    std::cout << "\nHRRN Gantt:\n"; printGantt(r2);
+    std::cout << "\nSJF Gantt:\n";
+    printGanttNamed(r1, sjf.processes());
+    std::cout << "\nHRRN Gantt:\n";
+    printGanttNamed(r2, hrrn.processes());
   }
 
   // Диаграмма Ганта для RR (q=2)
