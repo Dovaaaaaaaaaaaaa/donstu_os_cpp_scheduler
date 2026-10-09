@@ -13,6 +13,7 @@ add_executable(donstu_os_cpp_scheduler
     rr.h
     priority.h
     mlfq.h
+     edf.h
 )
 cmake_minimum_required(VERSION 3.16)
 
