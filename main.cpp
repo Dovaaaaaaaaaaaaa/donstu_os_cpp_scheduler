@@ -8,10 +8,11 @@
 #include "testsets.h"
 #include "hrrn.h"
 
+#include <functional>
+#include <memory>
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <memory>
 
 std::vector<Process> makeTestSet() {
   std::vector<Process> procs;
@@ -142,6 +143,62 @@ void printGanttNamed(const SimResult& r, const std::vector<Process>& procs) {
     }
   }
   std::cout << "\n";
+}
+using Factory = std::function<std::unique_ptr<Scheduler>(const std::vector<Process>&)>;
+
+template <class T, class... Args>
+Factory factory(Args... args) {
+    return [args...](const std::vector<Process>& s) {
+        return std::make_unique<T>(s, args...);
+    };
+}
+
+// metric: 0 = avgWaiting, 1 = avgTurnaround, 2 = avgResponse, 3 = cpuUtilization
+double getMetric(const SimResult& r, int metric) {
+    switch (metric) {
+        case 0: return r.avgWaiting;
+        case 1: return r.avgTurnaround;
+        case 2: return r.avgResponse;
+        default: return r.cpuUtilization;
+    }
+}
+
+void runExperiment10(int metric, const std::string& metricName) {
+    std::vector<std::pair<std::string, Factory>> algos = {
+        {"FCFS",       factory<FcfsScheduler>()},
+        {"SJF",        factory<SjfScheduler>()},
+        {"SRTN",       factory<SrtnScheduler>()},
+        {"HRRN",       factory<HrrnScheduler>()},
+        {"RR q=4",     factory<RrScheduler>(4)},
+        {"Prio",       factory<PriorityScheduler>(false, false)},
+        {"Prio+aging", factory<PriorityScheduler>(true, true)},
+        {"MLFQ",       factory<MlfqScheduler>()},
+    };
+    const int sizes[5] = {12, 14, 16, 18, 20};
+
+    std::cout << "\n" << metricName << "\n";
+    std::cout << std::left << std::setw(12) << "Algorithm" << std::right;
+    for (int i = 1; i <= 5; ++i)
+        std::cout << std::setw(9) << ("set " + std::to_string(i));
+    std::cout << std::setw(9) << "average" << "\n";
+
+    for (auto& [label, make] : algos) {
+        std::cout << std::left << std::setw(12) << label << std::right;
+        double sum = 0;
+        for (unsigned seed = 1; seed <= 5; ++seed) {
+            // загружаем сохранённый набор — так воспроизводимо на любом компиляторе
+            std::vector<Process> set;
+            loadSet("sets/set" + std::to_string(seed) + ".txt", set);
+            (void)sizes;
+
+            auto sched = make(set);
+            SimResult r = runSimulation(*sched);
+            double v = getMetric(r, metric);
+            sum += v;
+            std::cout << std::setw(9) << std::fixed << std::setprecision(2) << v;
+        }
+        std::cout << std::setw(9) << sum / 5 << "\n";
+    }
 }
 int main() {
   std::cout << "Case 1: CPU-bound\n";
@@ -293,5 +350,19 @@ int main() {
     saveSet("sets/set_convoy.txt", makeConvoySet());
 }
 }
+// Задание 10: сохраняем 5 случайных наборов
+{
+    const int sizes[5] = {12, 14, 16, 18, 20};
+    for (unsigned seed = 1; seed <= 5; ++seed) {
+        saveSet("sets/set" + std::to_string(seed) + ".txt",
+                makeRandomSet(seed, sizes[seed - 1]));
+    }
+    std::cout << "\nНаборы sets/set1..set5.txt сохранены.\n";
+}
+// Задание 10: сравнение алгоритмов по 5 наборам
+runExperiment10(0, "Average waiting time");
+runExperiment10(1, "Average turnaround time");
+runExperiment10(2, "Average response time");
+runExperiment10(3, "CPU utilization %");
   return 0;
 }
