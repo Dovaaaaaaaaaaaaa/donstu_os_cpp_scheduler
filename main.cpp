@@ -364,5 +364,19 @@ runExperiment10(0, "Average waiting time");
 runExperiment10(1, "Average turnaround time");
 runExperiment10(2, "Average response time");
 runExperiment10(3, "CPU utilization %");
+// Задание 9: Гант в CSV
+{
+    auto set = makeTestSet();
+    RrScheduler rr(set, 2);
+    saveGanttCsv("results/gantt_rr2.csv", runSimulation(rr));
+
+    MlfqScheduler mlfq(set);
+    saveGanttCsv("results/gantt_mlfq.csv", runSimulation(mlfq));
+
+    FcfsScheduler fcfs(set);
+    saveGanttCsv("results/gantt_fcfs.csv", runSimulation(fcfs));
+
+    std::cout << "\nCSV с Гантом сохранены в results/\n";
+}
   return 0;
 }
