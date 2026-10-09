@@ -75,5 +75,8 @@ struct Process {
   // текущая очередь (для MLFQ)
   int queueLevel = 0;
 
+  // абсолютный дедлайн (такт, к которому нужно завершиться); 0 — нет дедлайна
+  std::uint64_t deadline = 0;
+  
   bool isFinished() const { return remainingTime == 0; }
 };
